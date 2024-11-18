@@ -1,6 +1,8 @@
 #include "GlobalVariables.h"
 #include<TFT_eSPI.h>
 #include <ESPAsyncWebServer.h>
+#include <SD.h>
+#include <SPI.h>
 
 String commandID;
 String deviceName;
@@ -30,3 +32,4 @@ int8_t setData = 0;
 struct pms5003data pmdata;
 TFT_eSPI tft = TFT_eSPI();
 AsyncWebServer server(8080);
+SPIClass spiSD(HSPI);

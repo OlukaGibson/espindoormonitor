@@ -3,6 +3,8 @@
 
 void wifiManagerSetup();
 void serverRoutes();
+void fileSytem();
+
 void cloudDataUpload();
 
 #endif

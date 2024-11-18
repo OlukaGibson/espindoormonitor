@@ -7,6 +7,9 @@
 #include <FS.h>
 #include <ESPmDNS.h>
 
+#include <SD.h>
+#include <SPI.h>
+
 #include "WiFiManager.h" 
 WiFiManager wm;
 #define WEBSERVER_H
@@ -17,6 +20,7 @@ WiFiManager wm;
 
 #include "GlobalVariables.h"
 #include "SensorsReading.h"
+#include "Storage.h"
 
 const char* ssid = "AirQo Device";
 const char* password = "password";
@@ -55,6 +59,99 @@ void serverRoutes(){
     });
     server.begin();
 }
+
+void fileSytem(){
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send(LittleFS, "/index.html", "text/html");
+    });
+
+    // Serve file tree as JSON
+    server.on("/filetree", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String path = "/";
+    if (request->hasParam("path")) {
+        path = request->getParam("path")->value();
+    }
+
+    // Open the requested directory
+    File root = SD.open(path);
+    if (!root || !root.isDirectory()) {
+        request->send(404, "application/json", "{\"error\": \"Path not found or is not a directory\"}");
+        return;
+    }
+
+    // Determine parent directory
+    String parent = "/";
+    if (path != "/") {
+        int lastSlash = path.lastIndexOf('/');
+        parent = path.substring(0, lastSlash);
+        if (parent == "") parent = "/";
+    }
+
+    // Create JSON structure
+    String json = "{ \"parent\": \"" + parent + "\", \"folders\": [";
+    String files = "], \"files\": [";
+
+    File file = root.openNextFile();
+    while (file) {
+        String fileName = String(file.name());
+        
+        // Ensure filenames are properly stripped of the current directory
+        if (fileName.startsWith(path) && path != "/") {
+            fileName = fileName.substring(path.length());
+        }
+        if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
+
+        // Skip hidden/system files
+        if (fileName.startsWith(".")) {
+            file = root.openNextFile();
+            continue;
+        }
+
+        // Add to folders or files
+        if (file.isDirectory()) {
+            if (json != "{ \"parent\": \"" + parent + "\", \"folders\": [") json += ",";
+            json += "\"" + fileName + "/\"";
+        } else {
+            if (files != "], \"files\": [") files += ",";
+            files += "\"" + fileName + "\"";
+        }
+        file = root.openNextFile();
+    }
+
+    json += files + "] }";
+    request->send(200, "application/json", json);
+});
+
+    // Handle file download
+    server.on("/download", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("path")) {
+        String filePath = request->getParam("path")->value();
+
+        // Ensure the path starts with a "/"
+        if (!filePath.startsWith("/")) {
+            filePath = "/" + filePath;
+        }
+
+        File downloadFile = SD.open(filePath);
+        if (downloadFile && !downloadFile.isDirectory()) {
+            request->send(SD, filePath, "application/octet-stream");
+            downloadFile.close();
+        } else {
+            request->send(404, "text/plain", "File not found or is a directory");
+        }
+    } else {
+        request->send(400, "text/plain", "File parameter missing");
+    }
+});
+
+
+    server.begin();
+}
+
+
+//server based data upload
 
 void cloudDataUpload() {
     String url = String(serverName) + "?api_key=" + String(apiKey) + "&field1=" + String(sensor1_2) +

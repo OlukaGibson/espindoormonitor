@@ -1,148 +1,115 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-        <script src="https://code.highcharts.com/highcharts.js"></script>
-        <!-- Bootstrap CSS -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SD Card Browser</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
 
-        <!--Font Awesome CDN-->
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
-        <link rel="stylesheet" href="{% static '/todo.css' %}">
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 
-        <style>
-            body {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                background-color: #FFFFFF;
-                font-family: Arial, sans-serif;
-                margin: 0;
-            }
+    .folder, .file {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #e9e9e9;
+      transition: background-color 0.3s;
+    }
 
-            .container {
-                display: flex;
-                justify-content: space-around;
-                align-items: center;
-                width: 100%;
-                max-width: 600px;
-                text-align: center;
-            }
+    .folder:hover, .file:hover {
+      background: #d3d3d3;
+    }
 
-            .data {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
+    .folder {
+      font-weight: bold;
+    }
 
-            .circle {
-                width: 80px;
-                height: 80px;
-                border-radius: 50%;
-                color: black;
-                font-size: 1.5em;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 10px;
-            }
+    .file {
+      color: #555;
+    }
 
-            .label {
-                font-size: 1em;
-            }
+    .breadcrumb {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #ececec;
+      border-radius: 5px;
+    }
 
-            .pm1 { background-color: #00FF00; } /* Green */
-            .pm25 { background-color: #FFFF00; } /* Yellow */
-            .pm10 { background-color: #FF0000; } /* Red */
-        </style>
+    .breadcrumb span {
+      cursor: pointer;
+      color: #007bff;
+    }
 
-        <title id="title">AirQo Device</title>
-    </head>
-    <body>
-        <div class="container">
-            <!-- PM 1.0 Data -->
-            <div class="data">
-                <div class="circle pm1">10</div>
-                <div id="pm1" class="label">PM 1.0</div>
-            </div>
+    .breadcrumb span:hover {
+      text-decoration: underline;
+    }
 
-            <!-- PM 2.5 Data -->
-            <div class="data">
-                <div class="circle pm25">25</div>
-                <div id="pm25" class="label">PM 2.5</div>
-            </div>
+    .breadcrumb span:not(:last-child)::after {
+      content: " > ";
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>SD Card Browser</h1>
+  <div id="content"></div>
+  <script>
+  async function fetchFileTree(path = "/") {
+    const res = await fetch(`/filetree?path=${encodeURIComponent(path)}`);
+    const data = await res.json();
+    
+    const content = document.getElementById("content");
+    content.innerHTML = "";
 
-            <!-- PM 10 Data -->
-            <div class="data">
-                <div class="circle pm10">100</div>
-                <div id="pm10" class="label">PM 10</div>
-            </div>
-        </div>
+    // Breadcrumb Navigation
+    const breadcrumb = document.createElement("div");
+    breadcrumb.className = "breadcrumb";
+    let fullPath = "/";
+    path.split("/").filter(p => p).forEach((segment, index, array) => {
+      const span = document.createElement("span");
+      fullPath += segment + (index < array.length - 1 ? "/" : "");
+      span.innerText = segment || "Home";
+      span.onclick = () => fetchFileTree(fullPath);
+      breadcrumb.appendChild(span);
+    });
+    content.appendChild(breadcrumb);
 
-        <script>
-            let previousDataState = '0';
-            
-            function getDataState() {
-                fetch('/dataState')
-                .then(response => response.json())
-                .then(dataState => {
-                    if (JSON.stringify(dataState) !== JSON.stringify(previousDataState)) {
-                        previousDataState = dataState;
-                        updateAllData();
-                    }
-                })
-                .catch(error => console.error('Error fetching data state:', error));
-            }
+    // Add folders
+    data.folders.forEach(folder => {
+      const folderDiv = document.createElement("div");
+      folderDiv.className = "folder";
+      folderDiv.innerText = "📁 " + folder;
+      folderDiv.onclick = () => fetchFileTree(path + folder);
+      content.appendChild(folderDiv);
+    });
 
-            function updateAllData(){
-                getTitle();
-                getPM1();
-                getPM25();
-                getPM10();
-            }
+    // Add files
+    data.files.forEach(file => {
+      const fileDiv = document.createElement("div");
+      fileDiv.className = "file";
+      fileDiv.innerHTML = `📄 <a href='/download?path=${encodeURIComponent(path + file)}'>${file}</a>`;
+      content.appendChild(fileDiv);
+    });
+  }
 
-            function getTitle(){
-                fetch('/title')
-                .then(response => response.text())
-                .then(title => {
-                    document.getElementById('title').textContent = title;
-                })
-                .catch(error => console.error('Error fetching title:', error));
-            }
+  fetchFileTree();
+</script>
 
-            function getPM1(){
-                fetch('/pm1')
-                .then(response => response.json())
-                .then(pm1 => {
-                    document.getElementById('pm1').textContent = pm1;
-                })
-                .catch(error => console.error('Error fetching PM 1.0:', error));
-            }
-
-            function getPM25(){
-                fetch('/pm25')
-                .then(response => response.json())
-                .then(pm25 => {
-                    document.getElementById('pm25').textContent = pm25;
-                })
-                .catch(error => console.error('Error fetching PM 2.5:', error));
-            }
-
-            function getPM10(){
-                fetch('/pm10')
-                .then(response => response.json())
-                .then(pm10 => {
-                    document.getElementById('pm10').textContent = pm10;
-                })
-                .catch(error => console.error('Error fetching PM 10:', error));
-            }
-
-            setInterval(getDataState, 200);
-            getDataState();
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
-    </body>
+</body>
 </html>
