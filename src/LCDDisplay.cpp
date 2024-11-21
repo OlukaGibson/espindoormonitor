@@ -3,8 +3,17 @@
 #include "GlobalVariables.h"
 #include "SensorsReading.h"
 
+
 #include<SPI.h>
 #include<TFT_eSPI.h>
+
+void lcdSetup(){
+    tft.init();
+    tft.setRotation(1);
+    tft.setSwapBytes(false);
+    tft.fillScreen(TFT_WHITE);
+    delay(10);
+}
 
 void displayData(){
     if (readPMSdata(&Serial1)) {
@@ -63,3 +72,10 @@ void displayData(){
   delay(1000);
 }
 
+void displayHomeScreen(){}
+
+void displayIndoorSensorData(){}
+
+void displayOutdoorSensorData(){}
+
+void displayIndoorVsOutdoorSensorData(){}
