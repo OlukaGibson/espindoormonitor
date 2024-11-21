@@ -10,7 +10,6 @@
 void lcdSetup(){
     tft.init();
     tft.setRotation(1);
-    tft.setSwapBytes(false);
     tft.fillScreen(TFT_WHITE);
     delay(10);
 }
