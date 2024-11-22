@@ -6,12 +6,47 @@
 
 #include<SPI.h>
 #include<TFT_eSPI.h>
+#include <TFT_eWidget.h>
+#include <PNGdec.h>
+#include <LittleFS.h>
+#include <SD.h>
+#define FileSys LittleFS
+
+PNG png;
+File pngfile;
+#define MAX_IMAGE_WIDTH 480 
+
+int16_t xpos = 0;
+int16_t ypos = 0;
+
+void pngDraw(PNGDRAW *pDraw);
+void * pngOpen(const char *filename, int32_t *size);
+void pngClose(void *handle);
+int32_t pngRead(PNGFILE *page, uint8_t *buffer, int32_t length);
+int32_t pngSeek(PNGFILE *page, int32_t position);
 
 void lcdSetup(){
-    tft.init();
+    tft.begin();
     tft.setRotation(1);
-    tft.fillScreen(TFT_WHITE);
-    delay(10);
+    // tft.fillScreen(TFT_WHITE);
+    // delay(10);
+    String strname = "/logo.png";
+    int16_t rc = png.open(strname.c_str(), pngOpen, pngClose, pngRead, pngSeek, pngDraw);
+    if (rc == PNG_SUCCESS) {
+      tft.startWrite();
+      Serial.printf("image specs: (%d x %d), %d bpp, pixel type: %d\n", png.getWidth(), png.getHeight(), png.getBpp(), png.getPixelType());
+      uint32_t dt = millis();
+      if (png.getWidth() > MAX_IMAGE_WIDTH) {
+        Serial.println("Image too wide for allocated line buffer size!");
+      }
+      else{
+        rc = png.decode(NULL, 0);
+        png.close();
+      }
+      tft.endWrite();
+      Serial.print(millis()-dt); Serial.println("ms");
+    }
+    delay(2000);
 }
 
 void displayData(){
@@ -78,3 +113,35 @@ void displayIndoorSensorData(){}
 void displayOutdoorSensorData(){}
 
 void displayIndoorVsOutdoorSensorData(){}
+
+
+//ASSIT FUNCTIONS
+void pngDraw(PNGDRAW *pDraw) {
+  uint16_t lineBuffer[MAX_IMAGE_WIDTH];
+  png.getLineAsRGB565(pDraw, lineBuffer, PNG_RGB565_BIG_ENDIAN, 0xffffffff);
+  tft.pushImage(xpos, ypos + pDraw->y, pDraw->iWidth, 1, lineBuffer);
+}
+
+void * pngOpen(const char *filename, int32_t *size) {
+  Serial.printf("Attempting to open %s\n", filename);
+  pngfile = FileSys.open(filename, "r");
+  *size = pngfile.size();
+  return &pngfile;
+}
+
+void pngClose(void *handle) {
+  File pngfile = *((File*)handle);
+  if (pngfile) pngfile.close();
+}
+
+int32_t pngRead(PNGFILE *page, uint8_t *buffer, int32_t length) {
+  if (!pngfile) return 0;
+  page = page; // Avoid warning
+  return pngfile.read(buffer, length);
+}
+
+int32_t pngSeek(PNGFILE *page, int32_t position) {
+  if (!pngfile) return 0;
+  page = page; // Avoid warning
+  return pngfile.seek(position);
+}

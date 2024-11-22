@@ -3,6 +3,10 @@
         "array": "cpp",
         "string": "cpp",
         "string_view": "cpp",
-        "cstddef": "cpp"
+        "cstddef": "cpp",
+        "bitset": "cpp",
+        "initializer_list": "cpp",
+        "regex": "cpp",
+        "utility": "cpp"
     }
 }
