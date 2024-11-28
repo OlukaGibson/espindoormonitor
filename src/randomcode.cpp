@@ -174,3 +174,18 @@ void setupcode(){
 
 
 }
+
+void littlefsCode(){
+// void listFilesInLittleFS();
+
+// void listFilesInLittleFS() {
+//     Serial.println("Listing files in LittleFS:");
+//     File root = LittleFS.open("/");
+//     File file = root.openNextFile();
+//     while (file) {
+//         Serial.print("FILE: ");
+//         Serial.println(file.name());
+//         file = root.openNextFile();
+//     }
+// }
+}

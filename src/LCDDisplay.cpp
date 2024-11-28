@@ -2,7 +2,8 @@
 #include <Stream.h>
 #include "GlobalVariables.h"
 #include "SensorsReading.h"
-
+#include "LCDDisplay.h"
+#include "Storage.h"
 
 #include<SPI.h>
 #include<TFT_eSPI.h>
@@ -10,22 +11,26 @@
 #include <PNGdec.h>
 #include <LittleFS.h>
 #include <SD.h>
-#define FileSys LittleFS
 
-PNG png;
-File pngfile;
-#define MAX_IMAGE_WIDTH 480 
 
-int16_t xpos = 0;
-int16_t ypos = 0;
 
 void pngDraw(PNGDRAW *pDraw);
 void * pngOpen(const char *filename, int32_t *size);
 void pngClose(void *handle);
 int32_t pngRead(PNGFILE *page, uint8_t *buffer, int32_t length);
 int32_t pngSeek(PNGFILE *page, int32_t position);
+void sensorReadings (String location, String country, String pollutant, float value, uint32_t x, uint32_t y, uint16_t bgColor);
+void sensorCharts(uint32_t x, uint32_t y, uint16_t bgColor);
+void chartData(String location, String country, String pollutant, float value, uint32_t x, uint32_t y, uint16_t bgColor);
+void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor);
+void topBar(uint32_t x, uint32_t y, uint16_t bgColor);
 
 void lcdSetup(){
+    if (!LittleFS.begin()) {
+        Serial.println("LittleFS mount failed");
+        return;
+    }
+    // listFilesInLittleFS(); // List files in LittleFS
     tft.begin();
     tft.setRotation(1);
     // tft.fillScreen(TFT_WHITE);
@@ -106,14 +111,177 @@ void displayData(){
   delay(1000);
 }
 
-void displayHomeScreen(){}
+void displayHomeScreen() {
+    // Clear screen with white background
+    tft.fillScreen(TFT_WHITE);
 
-void displayIndoorSensorData(){}
+    // Set text color and size
+    tft.setTextColor(TFT_BLACK);
+    tft.setTextSize(2);
+
+    // Get current time, day, and date
+    String currentTime = "12:34"; // Replace with actual time fetching logic
+    String currentDay = "Monday"; // Replace with actual day fetching logic
+    String currentDate = "2023-10-10"; // Replace with actual date fetching logic
+
+    // Create widgets for time, day, and date
+    tft.setTextColor(TFT_BLACK);
+    tft.setTextSize(2);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString(currentDay, tft.width() / 2, tft.height() / 4);
+
+    tft.setTextColor(TFT_DARKGREY);
+    tft.setTextSize(7);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString(currentTime, tft.width() / 2, tft.height() / 2);
+
+    tft.setTextColor(TFT_BLUE);
+    tft.setTextSize(2);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString(currentDate, tft.width() / 2, 3 * tft.height() / 4);
+
+}
+
+void displayIndoorSensorData(){
+  tft.fillScreen(TFT_BG_COLOR);
+  topBar(0, 0, TFT_LIGHTGREY);
+  roomName("Living Room", 179, 55, TFT_LIGHTGREY);
+  readCSVData();
+  sensorCharts(250, 106, TFT_LIGHTGREY);
+  sensorReadings("Indoor", "Nairobi", "PM2.5", pmdata.pm25_standard, 39, 96, TFT_LIGHTGREY);
+  // sensorReadings("Indoor", "Nairobi", "PM10", pmdata.pm100_standard, 266, 86, TFT_WHITE);
+}
 
 void displayOutdoorSensorData(){}
 
 void displayIndoorVsOutdoorSensorData(){}
 
+void topBar(uint32_t x, uint32_t y, uint16_t bgColor){
+  tft.fillRect(x, y, 480, 36, bgColor); // Fill a rectangle at (x, y) with width 160 and height 87 with bgColor
+  tft.drawRect(x, y, 480, 36, TFT_BG_COLOR); // Draw a border for the rectangle
+
+  // // Location and country
+  // tft.setTextColor(TFT_BLACK);
+  // tft.setTextSize(2); // Adjust font size
+  // tft.setCursor(x + 5, y + 5); // Position for location
+  // tft.print("Living Room");
+
+  // Draw GoodAir.png image
+  String imageName = "/slogo.png";
+  int16_t rc = png.open(imageName.c_str(), pngOpen, pngClose, pngRead, pngSeek, pngDraw);
+  if (rc == PNG_SUCCESS) {
+    xpos = 28 + x; // X position for the image
+    ypos = 5 + y; // Y position for the image
+    rc = png.decode(NULL, 0);
+    png.close();
+  } else {
+    Serial.printf("Failed to open %s, error code: %d\n", imageName.c_str(), rc);
+  }
+}
+
+void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor){
+  tft.fillRect(x, y, 137, 30, bgColor); // Fill a rectangle at (x, y) with width 160 and height 87 with bgColor
+  tft.drawRect(x, y, 137, 30, TFT_BG_COLOR); // Draw a border for the rectangle
+
+  // Location and country
+  tft.setTextColor(TFT_BLACK);
+  tft.setTextSize(2); // Adjust font size
+  tft.setCursor(x + 5, y + 5); // Position for location
+  tft.print(location);
+}
+
+void sensorReadings (String location, String country, String pollutant, float value, uint32_t x, uint32_t y, uint16_t bgColor){
+  tft.fillRect(x, y, 160, 87, bgColor); // Fill a rectangle at (x, y) with width 160 and height 87 with bgColor
+  tft.drawRect(x, y, 160, 87, TFT_BG_COLOR); // Draw a border for the rectangle
+
+  // Location and country
+  tft.setTextColor(TFT_BLACK);
+  tft.setTextSize(2); // Adjust font size
+  tft.setCursor(x + 10, y + 10); // Position for location
+  tft.print(location);
+  
+  // tft.setTextSize(1); // Smaller font for country
+  // tft.setCursor(x + 10, y + 30); // Adjusted position for country
+  // tft.print(country);
+
+  // Pollutant type (e.g., PM2.5)
+  tft.setTextSize(1);
+  tft.setCursor(x + 10, y + 45); // Adjusted position for pollutant
+  tft.print(pollutant);
+
+  // Pollutant value
+  tft.setTextSize(3);
+  tft.setCursor(x + 10, y + 55); // Adjusted position for value
+  tft.print(value, 2); // Display with 2 decimal places
+
+  // Temp humidity value
+  tft.setTextSize(2);
+  tft.setCursor(x + 10, y + 110); // Adjusted position for label
+  tft.print("rh  :"); // Display label
+  tft.setTextSize(3);
+  tft.setCursor(x + 70, y + 105); // Adjusted position for value
+  tft.print("45.0"); // Display value with size 3
+
+  tft.setTextSize(2);
+  tft.setCursor(x + 10, y + 150); // Adjusted position for label
+  tft.print("temp:"); // Display label
+  tft.setTextSize(3);
+  tft.setCursor(x + 70, y + 145); // Adjusted position for value
+  tft.print("25.0"); // Display value with size 3
+
+  // Draw GoodAir.png image
+  String imageName = "/Moderate.png";
+  int16_t rc = png.open(imageName.c_str(), pngOpen, pngClose, pngRead, pngSeek, pngDraw);
+  if (rc == PNG_SUCCESS) {
+    xpos = 105 + x; // X position for the image
+    ypos = 39 + y; // Y position for the image
+    rc = png.decode(NULL, 0);
+    png.close();
+  } else {
+    Serial.printf("Failed to open %s, error code: %d\n", imageName.c_str(), rc);
+  }
+}
+
+
+void sensorCharts(unsigned int x, unsigned int y, unsigned short bgColor) {
+    // Define graph area
+    gr.createGraph(200, 150, tft.color565(220, 220, 220)); // Light grey background
+    gr.setGraphScale(0.0, data_count, 0.0, 100.0); // X: 0 to data_count, Y: 0 to 100
+    gr.setGraphGrid(0.0, 5.0, 0.0, 10.0, bgColor); // Grid every 5 points and 10 units
+    gr.drawGraph(x, y); // Draw graph at (40, 10)
+
+    // Draw bars
+    for (int i = 0; i < data_count; i++) {
+        float barHeight = pm25_data[i];
+        int barX = gr.getPointX(i);          // Map x to graph pixel
+        int barY = gr.getPointY(barHeight); // Top of the bar
+        int bottomY = gr.getPointY(0.0);    // Bottom of the graph
+        if (barX >= 0 && barX < tft.width() && barY >= 0 && barY < tft.height()) {
+            tft.fillRect(barX - 2, barY, 4, bottomY - barY, TFT_BLUE); // Draw bar
+        } else {
+            Serial.print("Bar out of bounds at X: "); // Debug print
+            Serial.print(barX); // Debug print
+            Serial.print(", Y: "); // Debug print
+            Serial.println(barY); // Debug print
+        }
+    }
+
+    // Draw x-axis labels
+    for (int i = 0; i < data_count; i++) {
+        tft.setTextDatum(TC_DATUM);
+        tft.setTextSize(1);
+        tft.setTextColor(TFT_BLACK, TFT_BG_COLOR);
+        tft.drawNumber(i, gr.getPointX(i), gr.getPointY(0.0) + 5);
+    }
+
+    // Draw y-axis labels
+    for (int i = 0; i <= 100; i += 10) {
+        tft.setTextDatum(MR_DATUM);
+        tft.setTextSize(1);
+        tft.setTextColor(TFT_BLACK, TFT_BG_COLOR);
+        tft.drawNumber(i, gr.getPointX(0.0) - 5, gr.getPointY(i));
+    }
+}
 
 //ASSIT FUNCTIONS
 void pngDraw(PNGDRAW *pDraw) {
@@ -145,3 +313,16 @@ int32_t pngSeek(PNGFILE *page, int32_t position) {
   page = page; // Avoid warning
   return pngfile.seek(position);
 }
+
+//color hex codes
+// #f5c93b - moderate
+// #2aeb81 - good
+// #f5c93b - moderate
+// #f05666 - unhealthy
+// #c76df7 - veryunhealth
+// #f173ff - harzadous
+// #ebebeb - in bg color
+// #f05666 - unhealthy
+// #c76df7 - veryunhealth
+// #f173ff - harzadous
+// #ebebeb - in bg color

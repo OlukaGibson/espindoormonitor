@@ -1,8 +1,12 @@
 #include "GlobalVariables.h"
 #include<TFT_eSPI.h>
+#include <TFT_eWidget.h>
 #include <ESPAsyncWebServer.h>
 #include <SD.h>
 #include <SPI.h>
+
+#include <PNGdec.h>
+#include <LittleFS.h>
 
 String commandID;
 String deviceName;
@@ -33,3 +37,12 @@ struct pms5003data pmdata;
 TFT_eSPI tft = TFT_eSPI();
 AsyncWebServer server(8080);
 SPIClass spiSD(HSPI);
+
+GraphWidget gr = GraphWidget(&tft);
+
+float pm25_data[MAX_DATA_POINTS];
+int data_count = 0;
+PNG png;
+File pngfile;
+int16_t xpos = 0;
+int16_t ypos = 0;

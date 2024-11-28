@@ -3,7 +3,12 @@
 
 #include <Arduino.h>
 #include<TFT_eSPI.h>
+#include <TFT_eWidget.h>
 #include <ESPAsyncWebServer.h>
+
+#include <PNGdec.h>
+#include <LittleFS.h>
+#include <SD.h>
 
 extern String commandID;
 extern String deviceName;
@@ -53,6 +58,12 @@ const int SD_MOSI = 23;
 const int SD_SCK = 22;
 const int SD_CS = 15;
 
+#define MAX_DATA_POINTS 20
+extern float pm25_data[MAX_DATA_POINTS];
+extern int data_count;
+
+extern GraphWidget gr;
+
 // Screen data imposed
 #define TFT_GREY 0x5AEB // New colour
 
@@ -80,5 +91,16 @@ const int SD_CS = 15;
 #define LOAD_GFXFF
 
 #define SMOOTH_FONT
+
+#define FileSys LittleFS
+
+extern PNG png;
+extern File pngfile;
+#define MAX_IMAGE_WIDTH 480 
+
+#define TFT_BG_COLOR 0xF7BE // Hex color 0xFAFCFF in RGB565 format
+
+extern int16_t xpos;
+extern int16_t ypos;
 
 #endif

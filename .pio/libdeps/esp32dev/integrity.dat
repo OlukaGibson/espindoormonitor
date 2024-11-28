@@ -1,6 +1,5 @@
-bodmer/TFT_eWidget@^0.0.6
 tzapu/WiFiManager@^2.0.17
-esphome/ESPAsyncWebServer-esphome@^3.3.0
-bodmer/TFT_eSPI@^2.3.59
-adafruit/Adafruit TouchScreen@^1.1.5
 bitbank2/PNGdec@^1.0.3
+bodmer/TFT_eWidget@^0.0.6
+bodmer/TFT_eSPI@^2.3.59
+esphome/ESPAsyncWebServer-esphome@^3.3.0

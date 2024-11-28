@@ -6,6 +6,7 @@
 #include <SPI.h>
 
 void setupStorage();
+void readCSVData();
 
 
 #endif

@@ -24,7 +24,9 @@ void Task1code( void * pvParameters ){
     wifiManagerSetup();
     serverRoutes();
     for(;;){
-        displayData();
+        // displayData();
+        // vTaskDelay(2000 / portTICK_PERIOD_MS);
+        displayIndoorSensorData();
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -35,7 +37,7 @@ void Task2code( void * pvParameters ){
     Serial.println(xPortGetCoreID());
     setupStorage();
     for(;;){
-        cloudDataUpload();
+        // cloudDataUpload();
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
