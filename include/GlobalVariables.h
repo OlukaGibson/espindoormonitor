@@ -58,7 +58,7 @@ const int SD_MOSI = 23;
 const int SD_SCK = 22;
 const int SD_CS = 15;
 
-#define MAX_DATA_POINTS 20
+#define MAX_DATA_POINTS 15
 extern float pm25_data[MAX_DATA_POINTS];
 extern int data_count;
 

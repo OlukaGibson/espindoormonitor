@@ -12,7 +12,7 @@
 #include <LittleFS.h>
 #include <SD.h>
 
-
+uint16_t radius = 5;
 
 void pngDraw(PNGDRAW *pDraw);
 void * pngOpen(const char *filename, int32_t *size);
@@ -147,7 +147,7 @@ void displayIndoorSensorData(){
   topBar(0, 0, TFT_LIGHTGREY);
   roomName("Living Room", 179, 55, TFT_LIGHTGREY);
   readCSVData();
-  sensorCharts(250, 106, TFT_LIGHTGREY);
+  sensorCharts(240, 106, TFT_LIGHTGREY);
   sensorReadings("Indoor", "Nairobi", "PM2.5", pmdata.pm25_standard, 39, 96, TFT_LIGHTGREY);
   // sensorReadings("Indoor", "Nairobi", "PM10", pmdata.pm100_standard, 266, 86, TFT_WHITE);
 }
@@ -159,12 +159,6 @@ void displayIndoorVsOutdoorSensorData(){}
 void topBar(uint32_t x, uint32_t y, uint16_t bgColor){
   tft.fillRect(x, y, 480, 36, bgColor); // Fill a rectangle at (x, y) with width 160 and height 87 with bgColor
   tft.drawRect(x, y, 480, 36, TFT_BG_COLOR); // Draw a border for the rectangle
-
-  // // Location and country
-  // tft.setTextColor(TFT_BLACK);
-  // tft.setTextSize(2); // Adjust font size
-  // tft.setCursor(x + 5, y + 5); // Position for location
-  // tft.print("Living Room");
 
   // Draw GoodAir.png image
   String imageName = "/slogo.png";
@@ -180,8 +174,8 @@ void topBar(uint32_t x, uint32_t y, uint16_t bgColor){
 }
 
 void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor){
-  tft.fillRect(x, y, 137, 30, bgColor); // Fill a rectangle at (x, y) with width 160 and height 87 with bgColor
-  tft.drawRect(x, y, 137, 30, TFT_BG_COLOR); // Draw a border for the rectangle
+  tft.fillRoundRect(x, y, 137, 30, radius, bgColor); // Fill a rounded rectangle
+  tft.drawRoundRect(x, y, 137, 30, radius, TFT_BG_COLOR); // Draw a border for the rounded rectangle
 
   // Location and country
   tft.setTextColor(TFT_BLACK);
@@ -191,8 +185,8 @@ void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor){
 }
 
 void sensorReadings (String location, String country, String pollutant, float value, uint32_t x, uint32_t y, uint16_t bgColor){
-  tft.fillRect(x, y, 160, 87, bgColor); // Fill a rectangle at (x, y) with width 160 and height 87 with bgColor
-  tft.drawRect(x, y, 160, 87, TFT_BG_COLOR); // Draw a border for the rectangle
+  tft.fillRoundRect(x, y, 160, 87, radius, bgColor); // Fill a rounded rectangle
+  tft.drawRoundRect(x, y, 160, 87, radius, TFT_BG_COLOR); // Draw a border for the rounded rectangle
 
   // Location and country
   tft.setTextColor(TFT_BLACK);
@@ -200,10 +194,6 @@ void sensorReadings (String location, String country, String pollutant, float va
   tft.setCursor(x + 10, y + 10); // Position for location
   tft.print(location);
   
-  // tft.setTextSize(1); // Smaller font for country
-  // tft.setCursor(x + 10, y + 30); // Adjusted position for country
-  // tft.print(country);
-
   // Pollutant type (e.g., PM2.5)
   tft.setTextSize(1);
   tft.setCursor(x + 10, y + 45); // Adjusted position for pollutant
@@ -245,19 +235,20 @@ void sensorReadings (String location, String country, String pollutant, float va
 
 void sensorCharts(unsigned int x, unsigned int y, unsigned short bgColor) {
     // Define graph area
-    gr.createGraph(200, 150, tft.color565(220, 220, 220)); // Light grey background
+    gr.createGraph(220, 150, tft.color565(220, 220, 220)); // Light grey background
     gr.setGraphScale(0.0, data_count, 0.0, 100.0); // X: 0 to data_count, Y: 0 to 100
     gr.setGraphGrid(0.0, 5.0, 0.0, 10.0, bgColor); // Grid every 5 points and 10 units
     gr.drawGraph(x, y); // Draw graph at (40, 10)
 
     // Draw bars
+    int barWidth = 10;
     for (int i = 0; i < data_count; i++) {
         float barHeight = pm25_data[i];
         int barX = gr.getPointX(i);          // Map x to graph pixel
         int barY = gr.getPointY(barHeight); // Top of the bar
         int bottomY = gr.getPointY(0.0);    // Bottom of the graph
         if (barX >= 0 && barX < tft.width() && barY >= 0 && barY < tft.height()) {
-            tft.fillRect(barX - 2, barY, 4, bottomY - barY, TFT_BLUE); // Draw bar
+            tft.fillRect(barX - barWidth / 2, barY, barWidth, bottomY - barY, TFT_BLUE); // Draw bar
         } else {
             Serial.print("Bar out of bounds at X: "); // Debug print
             Serial.print(barX); // Debug print
