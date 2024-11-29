@@ -46,3 +46,5 @@ PNG png;
 File pngfile;
 int16_t xpos = 0;
 int16_t ypos = 0;
+
+bool font_missing = false;

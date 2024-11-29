@@ -92,7 +92,7 @@ extern GraphWidget gr;
 
 #define SMOOTH_FONT
 
-#define FileSys LittleFS
+#define FlashFS LittleFS
 
 extern PNG png;
 extern File pngfile;
@@ -102,5 +102,11 @@ extern File pngfile;
 
 extern int16_t xpos;
 extern int16_t ypos;
+
+// TEXT ALIGNMENT
+#define AA_FONT_SMALL "NotoSansBold15"
+#define AA_FONT_LARGE "NotoSansBold36"
+extern bool font_missing;
+
 
 #endif

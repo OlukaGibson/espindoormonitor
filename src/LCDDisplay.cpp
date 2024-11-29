@@ -24,12 +24,9 @@ void sensorCharts(uint32_t x, uint32_t y, uint16_t bgColor);
 void chartData(String location, String country, String pollutant, float value, uint32_t x, uint32_t y, uint16_t bgColor);
 void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor);
 void topBar(uint32_t x, uint32_t y, uint16_t bgColor);
+void fontSetup();
 
 void lcdSetup(){
-    if (!LittleFS.begin()) {
-        Serial.println("LittleFS mount failed");
-        return;
-    }
     // listFilesInLittleFS(); // List files in LittleFS
     tft.begin();
     tft.setRotation(1);
@@ -52,63 +49,6 @@ void lcdSetup(){
       Serial.print(millis()-dt); Serial.println("ms");
     }
     delay(2000);
-}
-
-void displayData(){
-    if (readPMSdata(&Serial1)) {
-    // Print data to Serial Monitor
-    Serial.println("======= PMS5003 DATA =======");
-    Serial.print("PM 1.0: "); Serial.print(pmdata.pm10_standard);
-    Serial.print(", PM 2.5: "); Serial.print(pmdata.pm25_standard);
-    Serial.print(", PM 10: "); Serial.println(pmdata.pm100_standard);
-    Serial.println("===========================");
-
-    // Clear screen with white background
-    tft.fillScreen(TFT_WHITE); 
-
-    // Set label text color and size
-    tft.setTextColor(TFT_BLACK);
-    tft.setTextSize(1);
-
-    // Define the middle of the screen and spacing for the circles
-    int screenMidY = tft.height() / 2;    // Middle of the screen vertically
-    int circleRadius = 40;                // Increase circle size
-    int pm1_x = 60;                       // Position for PM 1.0 on the left
-    int pm25_x = tft.width() / 2;         // Position for PM 2.5 in the middle
-    int pm10_x = tft.width() - 60;        // Position for PM 10 on the right
-
-    // Draw labels above each circle
-    tft.setCursor(pm1_x - 15, screenMidY - circleRadius - 20);
-    tft.println("PM 1.0");
-
-    tft.setCursor(pm25_x - 15, screenMidY - circleRadius - 20);
-    tft.println("PM 2.5");
-
-    tft.setCursor(pm10_x - 15, screenMidY - circleRadius - 20);
-    tft.println("PM 10");
-
-    // Draw circles with values
-    tft.fillCircle(pm1_x, screenMidY, circleRadius, TFT_GREEN); // PM 1.0 circle
-    tft.setCursor(pm1_x - 10, screenMidY - 5);
-    tft.setTextColor(TFT_BLACK, TFT_GREEN); // Black text with green background
-    tft.setTextSize(3);                     // Larger text size for values
-    tft.print(pmdata.pm10_standard);
-
-    tft.fillCircle(pm25_x, screenMidY, circleRadius, TFT_YELLOW); // PM 2.5 circle
-    tft.setCursor(pm25_x - 10, screenMidY - 5);
-    tft.setTextColor(TFT_BLACK, TFT_YELLOW); // Black text with yellow background
-    tft.print(pmdata.pm25_standard);
-
-    tft.fillCircle(pm10_x, screenMidY, circleRadius, TFT_RED); // PM 10 circle
-    tft.setCursor(pm10_x - 10, screenMidY - 5);
-    tft.setTextColor(TFT_BLACK, TFT_RED);   // Black text with red background
-    tft.print(pmdata.pm100_standard);
-
-    // Reset text size and color for future use
-    tft.setTextSize(1);
-    tft.setTextColor(TFT_BLACK);
-  }
-  delay(1000);
 }
 
 void displayHomeScreen() {
@@ -232,7 +172,6 @@ void sensorReadings (String location, String country, String pollutant, float va
   }
 }
 
-
 void sensorCharts(unsigned int x, unsigned int y, unsigned short bgColor) {
     // Define graph area
     gr.createGraph(220, 150, tft.color565(220, 220, 220)); // Light grey background
@@ -274,6 +213,18 @@ void sensorCharts(unsigned int x, unsigned int y, unsigned short bgColor) {
     }
 }
 
+void fontSetup(){
+  if (LittleFS.exists("/NotoSansBold15.vlw")    == false) font_missing = true;
+  if (LittleFS.exists("/NotoSansBold36.vlw")    == false) font_missing = true;
+
+  if (font_missing)
+  {
+    Serial.println("\nFont missing in Flash FS, did you upload it?");
+    while(1) yield();
+  }
+  else Serial.println("\nFonts found OK.");
+}
+
 //ASSIT FUNCTIONS
 void pngDraw(PNGDRAW *pDraw) {
   uint16_t lineBuffer[MAX_IMAGE_WIDTH];
@@ -283,7 +234,7 @@ void pngDraw(PNGDRAW *pDraw) {
 
 void * pngOpen(const char *filename, int32_t *size) {
   Serial.printf("Attempting to open %s\n", filename);
-  pngfile = FileSys.open(filename, "r");
+  pngfile = FlashFS.open(filename, "r");
   *size = pngfile.size();
   return &pngfile;
 }

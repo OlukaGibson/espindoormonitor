@@ -47,10 +47,8 @@ void setup() {
     delay(10);
     Serial1.begin(9600, SERIAL_8N1, RXD2, TXD2);
     delay(10);
-    if (!LittleFS.begin()){
-        Serial.println("An Error has occurred while mounting LittleFS");
-        return;
-    }
+    littleFSStorage();
+    fontSetup();
     xTaskCreatePinnedToCore(
         Task1code,   /* Task function. */
         "Task1",     /* name of task. */
