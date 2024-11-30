@@ -104,8 +104,10 @@ extern int16_t xpos;
 extern int16_t ypos;
 
 // TEXT ALIGNMENT
-#define AA_FONT_SMALL "NotoSansBold15"
-#define AA_FONT_LARGE "NotoSansBold36"
+#define AA_FONT_SMALL "NotoSans20"
+#define AA_FONT_LARGE "NotoSans36"
+#define AA_FONT_TINNY "NotoSans15"
+#define AA_FONT_MEDIUM "NotoSans30"
 extern bool font_missing;
 
 

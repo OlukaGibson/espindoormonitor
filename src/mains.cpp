@@ -24,9 +24,9 @@ void Task1code( void * pvParameters ){
     wifiManagerSetup();
     serverRoutes();
     for(;;){
-        displayHomeScreen();
+        // displayHomeScreen();
         // vTaskDelay(2000 / portTICK_PERIOD_MS);
-        // displayIndoorSensorData();
+        displayIndoorSensorData();
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }

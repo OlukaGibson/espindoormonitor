@@ -57,7 +57,6 @@ void displayHomeScreen() {
 
     // Set text color and size
     tft.setTextColor(TFT_BLACK);
-    tft.setTextSize(2);
 
     // Get current time, day, and date
     String currentTime = "12:34"; // Replace with actual time fetching logic
@@ -66,19 +65,22 @@ void displayHomeScreen() {
 
     // Create widgets for time, day, and date
     tft.setTextColor(TFT_BLACK);
-    tft.setTextSize(2);
     tft.setTextDatum(MC_DATUM);
+    tft.loadFont(AA_FONT_SMALL, LittleFS);
     tft.drawString(currentDay, tft.width() / 2, tft.height() / 4);
+    tft.unloadFont();
 
     tft.setTextColor(TFT_DARKGREY);
-    tft.setTextSize(7);
     tft.setTextDatum(MC_DATUM);
+    tft.loadFont(AA_FONT_LARGE, LittleFS);
     tft.drawString(currentTime, tft.width() / 2, tft.height() / 2);
+    tft.unloadFont();
 
     tft.setTextColor(TFT_BLUE);
-    tft.setTextSize(2);
     tft.setTextDatum(MC_DATUM);
+    tft.loadFont(AA_FONT_SMALL, LittleFS);
     tft.drawString(currentDate, tft.width() / 2, 3 * tft.height() / 4);
+    tft.unloadFont();
 
 }
 
@@ -94,7 +96,8 @@ void displayIndoorSensorData(){
 
 void displayOutdoorSensorData(){}
 
-void displayIndoorVsOutdoorSensorData(){}
+void menuDisplay(){}
+
 
 void topBar(uint32_t x, uint32_t y, uint16_t bgColor){
   tft.fillRect(x, y, 480, 36, bgColor); // Fill a rectangle at (x, y) with width 160 and height 87 with bgColor
@@ -119,9 +122,10 @@ void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor){
 
   // Location and country
   tft.setTextColor(TFT_BLACK);
-  tft.setTextSize(2); // Adjust font size
+  tft.loadFont(AA_FONT_SMALL, LittleFS);
   tft.setCursor(x + 5, y + 5); // Position for location
   tft.print(location);
+  tft.unloadFont();
 }
 
 void sensorReadings (String location, String country, String pollutant, float value, uint32_t x, uint32_t y, uint16_t bgColor){
@@ -130,34 +134,41 @@ void sensorReadings (String location, String country, String pollutant, float va
 
   // Location and country
   tft.setTextColor(TFT_BLACK);
-  tft.setTextSize(2); // Adjust font size
+  tft.loadFont(AA_FONT_SMALL, LittleFS);
   tft.setCursor(x + 10, y + 10); // Position for location
   tft.print(location);
+  // tft.unloadFont();
   
   // Pollutant type (e.g., PM2.5)
-  tft.setTextSize(1);
-  tft.setCursor(x + 10, y + 45); // Adjusted position for pollutant
+  tft.loadFont(AA_FONT_TINNY, LittleFS);
+  tft.setCursor(x + 10, y + 35); // Adjusted position for pollutant
   tft.print(pollutant);
+  // tft.unloadFont();
 
   // Pollutant value
-  tft.setTextSize(3);
+  tft.loadFont(AA_FONT_MEDIUM, LittleFS);
   tft.setCursor(x + 10, y + 55); // Adjusted position for value
   tft.print(value, 2); // Display with 2 decimal places
+  // tft.unloadFont();
 
   // Temp humidity value
-  tft.setTextSize(2);
+  tft.loadFont(AA_FONT_SMALL, LittleFS);
   tft.setCursor(x + 10, y + 110); // Adjusted position for label
   tft.print("rh  :"); // Display label
-  tft.setTextSize(3);
+  // tft.unloadFont();
+  tft.loadFont(AA_FONT_MEDIUM, LittleFS);
   tft.setCursor(x + 70, y + 105); // Adjusted position for value
   tft.print("45.0"); // Display value with size 3
+  // tft.unloadFont();
 
-  tft.setTextSize(2);
+  tft.loadFont(AA_FONT_SMALL, LittleFS);
   tft.setCursor(x + 10, y + 150); // Adjusted position for label
   tft.print("temp:"); // Display label
-  tft.setTextSize(3);
+  // tft.unloadFont();
+  tft.loadFont(AA_FONT_MEDIUM, LittleFS);
   tft.setCursor(x + 70, y + 145); // Adjusted position for value
   tft.print("25.0"); // Display value with size 3
+  tft.unloadFont();
 
   // Draw GoodAir.png image
   String imageName = "/Moderate.png";
@@ -173,6 +184,7 @@ void sensorReadings (String location, String country, String pollutant, float va
 }
 
 void sensorCharts(unsigned int x, unsigned int y, unsigned short bgColor) {
+  tft.loadFont(AA_FONT_TINNY, LittleFS);
     // Define graph area
     gr.createGraph(220, 150, tft.color565(220, 220, 220)); // Light grey background
     gr.setGraphScale(0.0, data_count, 0.0, 100.0); // X: 0 to data_count, Y: 0 to 100
@@ -199,23 +211,28 @@ void sensorCharts(unsigned int x, unsigned int y, unsigned short bgColor) {
     // Draw x-axis labels
     for (int i = 0; i < data_count; i++) {
         tft.setTextDatum(TC_DATUM);
-        tft.setTextSize(1);
+        // tft.loadFont(AA_FONT_TINNY, LittleFS);
         tft.setTextColor(TFT_BLACK, TFT_BG_COLOR);
         tft.drawNumber(i, gr.getPointX(i), gr.getPointY(0.0) + 5);
+        // tft.unloadFont();
     }
 
     // Draw y-axis labels
     for (int i = 0; i <= 100; i += 10) {
         tft.setTextDatum(MR_DATUM);
-        tft.setTextSize(1);
+        // tft.loadFont(AA_FONT_TINNY, LittleFS);
         tft.setTextColor(TFT_BLACK, TFT_BG_COLOR);
         tft.drawNumber(i, gr.getPointX(0.0) - 5, gr.getPointY(i));
+        // tft.unloadFont();
     }
+    tft.unloadFont();
 }
 
 void fontSetup(){
-  if (LittleFS.exists("/NotoSansBold15.vlw")    == false) font_missing = true;
-  if (LittleFS.exists("/NotoSansBold36.vlw")    == false) font_missing = true;
+  if (LittleFS.exists("/NotoSans15.vlw")    == false) font_missing = true;
+  if (LittleFS.exists("/NotoSans20.vlw")    == false) font_missing = true;
+  if (LittleFS.exists("/NotoSans30.vlw")    == false) font_missing = true;
+  if (LittleFS.exists("/NotoSans36.vlw")    == false) font_missing = true;
 
   if (font_missing)
   {
