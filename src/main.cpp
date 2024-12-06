@@ -37,6 +37,7 @@ const std::vector<std::vector<const char*>> subButtonLabels = {
 
 // Global state variables
 int currentSelection = 0; // Current selected button index
+int subMenuSelection = 0; // Current selected submenu button index
 bool selectPressed = false;
 bool isMainMenu = true;   // Tracks if the user is in the main menu
 int activeMainMenu = -1;  // Tracks which main menu button was selected
@@ -85,7 +86,6 @@ void loop() {
   // Handle joystick input
   handleJoystick(xValue, yValue, buttonState);
 
-  // Delay for smoother input handling
   delay(150);
 }
 
@@ -106,7 +106,7 @@ void handleJoystick(int xValue, int yValue, int buttonState) {
       selectPressed = true;
       activeMainMenu = currentSelection; // Track selected main menu button
       isMainMenu = false;
-      currentSelection = 0; // Reset selection for submenu
+      subMenuSelection = 0; // Reset selection for submenu
 
       // Show the corresponding submenu
       drawSubMenu(activeMainMenu);
@@ -136,26 +136,30 @@ void moveSelection(int direction) {
   if (isMainMenu) {
     clearHighlight(mainButtons, currentSelection);
   } else {
-    clearHighlight(subButtons[activeMainMenu], currentSelection);
+    clearHighlight(subButtons[activeMainMenu], subMenuSelection);
   }
 
   // Update selection index
-  currentSelection += direction;
+  if (isMainMenu) {
+    currentSelection += direction;
+  } else {
+    subMenuSelection += direction;
+  }
 
   // Wrap around menu options
   if (isMainMenu) {
     if (currentSelection < 0) currentSelection = mainButtons.size() - 1;
     if (currentSelection >= mainButtons.size()) currentSelection = 0;
   } else {
-    if (currentSelection < 0) currentSelection = subButtons[activeMainMenu].size() - 1;
-    if (currentSelection >= subButtons[activeMainMenu].size()) currentSelection = 0;
+    if (subMenuSelection < 0) subMenuSelection = subButtons[activeMainMenu].size() - 1;
+    if (subMenuSelection >= subButtons[activeMainMenu].size()) subMenuSelection = 0;
   }
 
   // Highlight new selection
   if (isMainMenu) {
     highlightButton(mainButtons, currentSelection);
   } else {
-    highlightButton(subButtons[activeMainMenu], currentSelection);
+    highlightButton(subButtons[activeMainMenu], subMenuSelection);
   }
 }
 
@@ -174,7 +178,7 @@ void resetSelection() {
   Serial.println("Returning to main menu...");
   isMainMenu = true;
   activeMainMenu = -1;
-  currentSelection = 0;
+  subMenuSelection = 0;
   drawMainMenu();
 }
 
@@ -201,7 +205,7 @@ void drawMainMenu() {
     mainButtons[i].drawButton(false);
   }
 
-  // Highlight the first button
+  // Highlight the current button
   highlightButton(mainButtons, currentSelection);
 }
 
@@ -233,5 +237,5 @@ void drawSubMenu(int menuIndex) {
   }
 
   // Highlight the first button in the submenu
-  highlightButton(subButtons[menuIndex], currentSelection);
+  highlightButton(subButtons[menuIndex], subMenuSelection);
 }
