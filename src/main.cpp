@@ -1,157 +1,237 @@
-// #include <Arduino.h>
-// #include <WiFi.h>
+#include <Arduino.h>
+#include <WiFi.h>
+#include <vector> // Include vector library
 
-// // Include the SD library
-// #include <SD.h>
+// Include the SD library
+#include <SD.h>
 
-// #include "GlobalVariables.h"
-// #include "SensorsReading.h"
-// #include "LCDDisplay.h"
-// #include "wifiComms.h"
-// #include "EspnowComms.h"
-// #include "Storage.h"
+#include "GlobalVariables.h"
+#include "SensorsReading.h"
+#include "LCDDisplay.h"
+#include "wifiComms.h"
+#include "EspnowComms.h"
+#include "Storage.h"
 
-// // #include <SPI.h>
-// #include <TFT_eSPI.h>
-// #include <TFT_eWidget.h>
+// #include <SPI.h>
+#include <TFT_eSPI.h>
+#include <TFT_eWidget.h>
 
-// #define AA_FONT_SMALL "NotoSansBold15"
-// #define AA_FONT_LARGE "NotoSansBold36"
+std::vector<TFT_eSPI_Button> mainButtons; // Vector for main menu buttons
+std::vector<std::vector<TFT_eSPI_Button>> subButtons;  // Vector of vectors for submenu buttons
 
-// #define FlashFS LittleFS
+// Define main menu button labels
+const std::vector<const char*> mainButtonLabels = {"Wifi", "Devices", "Files", "Settings"};
 
-// void setup(void) {
+// Define submenu button labels
+const std::vector<std::vector<const char*>> subButtonLabels = {
+  {"room1"},
+  {"device1", "device2"},
+  {"file1", "file2", "file3"},
+  {"setting1", "setting2", "setting3"}
+};
 
-//   Serial.begin(250000);
+// Joystick pin definitions
+#define VRx_PIN 34
+#define VRy_PIN 35
+#define SW_PIN 0 
 
-//   tft.begin();
+// Global state variables
+int currentSelection = 0; // Current selected button index
+bool selectPressed = false;
+bool isMainMenu = true;   // Tracks if the user is in the main menu
+int activeMainMenu = -1;  // Tracks which main menu button was selected
 
-//   tft.setRotation(1);
+// Button properties
+#define BUTTON_WIDTH  120
+#define BUTTON_HEIGHT 50
+#define BUTTON_GAP    20
+#define BUTTON_COLOR  TFT_BLUE
+#define SELECT_COLOR  TFT_WHITE
 
-//   if (!LittleFS.begin()) {
-//     Serial.println("Flash FS initialisation failed!");
-//     while (1) yield(); // Stay here twiddling thumbs waiting
-//   }
-// //   Serial.println("\n\Flash FS available!");
-  
-//   bool font_missing = false;
-//   if (LittleFS.exists("/NotoSansBold15.vlw")    == false) font_missing = true;
-//   if (LittleFS.exists("/NotoSansBold36.vlw")    == false) font_missing = true;
+// Center positions
+#define CENTER_X 1947
+#define CENTER_Y 1891
+#define TOLERANCE 1000
 
-//   if (font_missing)
-//   {
-//     Serial.println("\nFont missing in Flash FS, did you upload it?");
-//     while(1) yield();
-//   }
-//   else Serial.println("\nFonts found OK.");
-// }
+// Function declarations
+void handleJoystick(int xValue, int yValue, int buttonState);
+void moveSelection(int direction);
+void highlightButton(std::vector<TFT_eSPI_Button>& buttons, int index);
+void resetSelection();
+void drawMainMenu();
+void drawSubMenu(int menuIndex);
+void clearHighlight(std::vector<TFT_eSPI_Button>& buttons, int index);
 
+void setup() {
+  // Initialize serial and joystick
+  Serial.begin(115200);
+  pinMode(SW_PIN, INPUT_PULLUP);
 
-// void loop() {
+  // Initialize TFT display
+  tft.init();
+  tft.setRotation(1);
+  tft.fillScreen(TFT_BLACK);
 
-//   tft.fillScreen(TFT_BLACK);
+  // Initialize main menu
+  drawMainMenu();
+}
 
-//   tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour
-//                                           // so the anti-aliasing works
+void loop() {
+  // Read joystick values
+  int xValue = analogRead(VRx_PIN);
+  int yValue = analogRead(VRy_PIN);
+  int buttonState = digitalRead(SW_PIN);
 
-//   tft.setCursor(0, 0); // Set cursor at top left of screen
+  // Handle joystick input
+  handleJoystick(xValue, yValue, buttonState);
 
+  // Delay for smoother input handling
+  delay(150);
+}
 
-//   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//   // Small font
-//   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Function to handle joystick input
+void handleJoystick(int xValue, int yValue, int buttonState) {
+  static bool prevButtonState = HIGH;
 
-//   tft.loadFont(AA_FONT_SMALL, LittleFS); // Must load the font first
+  if (isMainMenu) {
+    // Up/Down to toggle selection
+    if (yValue < CENTER_Y - TOLERANCE) {
+      moveSelection(-1); // Up
+    } else if (yValue > CENTER_Y + TOLERANCE) {
+      moveSelection(1); // Down
+    }
 
-//   tft.println("Small 15pt font"); // println moves cursor down for a new line
+    // Right or button press to select
+    if ((xValue > CENTER_X + TOLERANCE || buttonState == LOW) && !selectPressed) {
+      selectPressed = true;
+      activeMainMenu = currentSelection; // Track selected main menu button
+      isMainMenu = false;
+      currentSelection = 0; // Reset selection for submenu
 
-//   tft.println(); // New line
+      // Show the corresponding submenu
+      drawSubMenu(activeMainMenu);
+    } else if (buttonState == HIGH && xValue < CENTER_X + TOLERANCE) {
+      selectPressed = false;
+    }
+  } else {
+    // Submenu navigation
+    if (yValue < CENTER_Y - TOLERANCE) {
+      moveSelection(-1); // Up
+    } else if (yValue > CENTER_Y + TOLERANCE) {
+      moveSelection(1); // Down
+    }
 
-//   tft.print("ABC"); // print leaves cursor at end of line
+    // Left to return to the main menu
+    if (xValue < CENTER_X - TOLERANCE) {
+      resetSelection();
+    }
+  }
 
-//   tft.setTextColor(TFT_CYAN, TFT_BLACK);
-//   tft.println("1234"); // Added to line after ABC
+  prevButtonState = buttonState;
+}
 
-//   tft.setTextColor(TFT_YELLOW, TFT_BLACK);
-//   // print stream formatting can be used,see:
-//   // https://www.arduino.cc/en/Serial/Print
-//   int ivalue = 1234;
-//   tft.println(ivalue);       // print as an ASCII-encoded decimal
-//   tft.println(ivalue, DEC);  // print as an ASCII-encoded decimal
-//   tft.println(ivalue, HEX);  // print as an ASCII-encoded hexadecimal
-//   tft.println(ivalue, OCT);  // print as an ASCII-encoded octal
-//   tft.println(ivalue, BIN);  // print as an ASCII-encoded binary
+// Function to move the selection in the menu
+void moveSelection(int direction) {
+  // Clear current highlight
+  if (isMainMenu) {
+    clearHighlight(mainButtons, currentSelection);
+  } else {
+    clearHighlight(subButtons[activeMainMenu], currentSelection);
+  }
 
-//   tft.println(); // New line
-//   tft.setTextColor(TFT_MAGENTA, TFT_BLACK);
-//   float fvalue = 1.23456;
-//   tft.println(fvalue, 0);  // no decimal places
-//   tft.println(fvalue, 1);  // 1 decimal place
-//   tft.println(fvalue, 2);  // 2 decimal places
-//   tft.println(fvalue, 5);  // 5 decimal places
+  // Update selection index
+  currentSelection += direction;
 
-//   delay(5000);
+  // Wrap around menu options
+  if (isMainMenu) {
+    if (currentSelection < 0) currentSelection = mainButtons.size() - 1;
+    if (currentSelection >= mainButtons.size()) currentSelection = 0;
+  } else {
+    if (currentSelection < 0) currentSelection = subButtons[activeMainMenu].size() - 1;
+    if (currentSelection >= subButtons[activeMainMenu].size()) currentSelection = 0;
+  }
 
-//   // Get ready for the next demo while we have this font loaded
-//   tft.fillScreen(TFT_BLACK);
-//   tft.setCursor(0, 0); // Set cursor at top left of screen
-//   tft.setTextColor(TFT_WHITE, TFT_BLACK);
-//   tft.println("Wrong and right ways to");
-//   tft.println("print changing values...");
+  // Highlight new selection
+  if (isMainMenu) {
+    highlightButton(mainButtons, currentSelection);
+  } else {
+    highlightButton(subButtons[activeMainMenu], currentSelection);
+  }
+}
 
-//   tft.unloadFont(); // Remove the font to recover memory used
+// Function to highlight a button
+void highlightButton(std::vector<TFT_eSPI_Button>& buttons, int index) {
+  buttons[index].drawButton(true);
+}
 
+// Function to clear button highlight
+void clearHighlight(std::vector<TFT_eSPI_Button>& buttons, int index) {
+  buttons[index].drawButton(false);
+}
 
-//   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//   // Large font
-//   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Function to reset selection and return to the main menu
+void resetSelection() {
+  Serial.println("Returning to main menu...");
+  isMainMenu = true;
+  activeMainMenu = -1;
+  currentSelection = 0;
+  drawMainMenu();
+}
 
-//   tft.loadFont(AA_FONT_LARGE, LittleFS); // Load another different font
+// Function to draw the main menu
+void drawMainMenu() {
+  tft.fillScreen(TFT_BLACK);
 
-//   //tft.fillScreen(TFT_BLACK);
-  
-//   // Draw changing numbers - does not work unless a filled rectangle is drawn over the old text
-//   for (int i = 0; i <= 20; i++)
-//   {
-//     tft.setCursor(50, 50);
-//     tft.setTextColor(TFT_GREEN, TFT_BLACK); // TFT_BLACK is used for anti-aliasing only
-//                                             // By default background fill is off
-//     tft.print("      "); // Overprinting old number with spaces DOES NOT WORK!
-//     tft.setCursor(50, 50);
-//     tft.print(i / 10.0, 1);
+  mainButtons.clear(); // Clear existing buttons
+  for (int i = 0; i < mainButtonLabels.size(); i++) {
+    TFT_eSPI_Button button;
+    button.initButton(
+      &tft,
+      80, // Shifted left to make space for submenu
+      40 + i * (BUTTON_HEIGHT + BUTTON_GAP),
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
+      TFT_WHITE,
+      BUTTON_COLOR,
+      TFT_BLACK,
+      (char*)mainButtonLabels[i], // Cast to char*
+      2
+    );
+    mainButtons.push_back(button);
+    mainButtons[i].drawButton(false);
+  }
 
-//     // Adding a parameter "true" to the setTextColor() function fills character background
-//     // This extra parameter is only for smooth fonts!
-//     tft.setTextColor(TFT_GREEN, TFT_BLACK, true);
-//     tft.setCursor(50, 90);
-//     tft.print(i / 10.0, 1);
-    
-//     delay (200);
-//   }
+  // Highlight the first button
+  highlightButton(mainButtons, currentSelection);
+}
 
-//   delay(5000);
+// Function to draw a submenu
+void drawSubMenu(int menuIndex) {
+  tft.fillRect(160, 0, tft.width() - 160, tft.height(), TFT_BLACK);
 
-//   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//   // Large font text wrapping
-//   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  if (subButtons.size() <= menuIndex) {
+    subButtons.resize(menuIndex + 1);
+  }
 
-//   tft.fillScreen(TFT_BLACK);
-  
-//   tft.setTextColor(TFT_YELLOW, TFT_BLACK); // Change the font colour and the background colour
+  subButtons[menuIndex].clear(); // Clear existing submenu buttons
+  for (int i = 0; i < subButtonLabels[menuIndex].size(); i++) {
+    TFT_eSPI_Button button;
+    button.initButton(
+      &tft,
+      240, // Submenu positioned on the right
+      40 + i * (BUTTON_HEIGHT + BUTTON_GAP),
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
+      TFT_WHITE,
+      BUTTON_COLOR,
+      TFT_BLACK,
+      (char*)subButtonLabels[menuIndex][i], // Cast to char*
+      2
+    );
+    subButtons[menuIndex].push_back(button);
+    subButtons[menuIndex][i].drawButton(false);
+  }
 
-//   tft.setCursor(0, 0); // Set cursor at top left of screen
-
-//   tft.println("Large font!");
-
-//   tft.setTextWrap(true); // Wrap on width
-//   tft.setTextColor(TFT_CYAN, TFT_BLACK);
-//   tft.println("Long lines wrap to the next line");
-
-//   tft.setTextWrap(false, false); // Wrap on width and height switched off
-//   tft.setTextColor(TFT_MAGENTA, TFT_BLACK);
-//   tft.println("Unless text wrap is switched off");
-
-//   tft.unloadFont(); // Remove the font to recover memory used
-
-//   delay(8000);
-// }
+  // Highlight the first button in the submenu
+  highlightButton(subButtons[menuIndex], currentSelection);
+}

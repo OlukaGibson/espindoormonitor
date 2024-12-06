@@ -110,5 +110,9 @@ extern int16_t ypos;
 #define AA_FONT_MEDIUM "NotoSans30"
 extern bool font_missing;
 
+// Joystick pin definitions
+#define VRx_PIN 34
+#define VRy_PIN 35
+#define SW_PIN 0 
 
 #endif

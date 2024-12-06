@@ -25,6 +25,7 @@ void chartData(String location, String country, String pollutant, float value, u
 void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor);
 void topBar(uint32_t x, uint32_t y, uint16_t bgColor);
 void fontSetup();
+void menuDisplay();
 
 void lcdSetup(){
     // listFilesInLittleFS(); // List files in LittleFS
@@ -92,11 +93,15 @@ void displayIndoorSensorData(){
   sensorCharts(240, 106, TFT_LIGHTGREY);
   sensorReadings("Indoor", "Nairobi", "PM2.5", pmdata.pm25_standard, 39, 96, TFT_LIGHTGREY);
   // sensorReadings("Indoor", "Nairobi", "PM10", pmdata.pm100_standard, 266, 86, TFT_WHITE);
+  delay(3000);
 }
 
 void displayOutdoorSensorData(){}
 
-void menuDisplay(){}
+void menuDisplay(){
+  tft.fillScreen(TFT_BG_COLOR);
+
+}
 
 
 void topBar(uint32_t x, uint32_t y, uint16_t bgColor){
