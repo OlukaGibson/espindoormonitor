@@ -115,4 +115,30 @@ extern bool font_missing;
 #define VRy_PIN 35
 #define SW_PIN 0 
 
+//menu button
+extern TFT_eSPI_Button button;
+extern std::vector<TFT_eSPI_Button> mainButtons;
+extern std::vector<std::vector<TFT_eSPI_Button>> subButtons;
+extern const std::vector<const char*> mainButtonLabels;
+extern const std::vector<std::vector<const char*>> subButtonLabels;
+
+// Global state variables
+extern int currentSelection ;
+extern int subMenuSelection ;
+extern bool selectPressed ;
+extern bool isMainMenu ;
+extern int activeMainMenu ;
+
+// Button properties
+#define BUTTON_WIDTH  120
+#define BUTTON_HEIGHT 50
+#define BUTTON_GAP    20
+#define BUTTON_COLOR  TFT_BLUE
+#define SELECT_COLOR  TFT_WHITE
+
+// Center positions
+#define CENTER_X 1947
+#define CENTER_Y 1891
+#define TOLERANCE 1200
+
 #endif

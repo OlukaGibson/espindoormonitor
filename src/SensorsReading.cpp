@@ -46,3 +46,7 @@ bool readPMSdata(Stream *s){
   return true;
 
 }
+
+void joystickSetup(){
+  pinMode(SW_PIN, INPUT_PULLUP);
+}

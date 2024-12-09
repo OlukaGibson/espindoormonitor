@@ -4,5 +4,6 @@
 #include <Stream.h>
 
 bool readPMSdata(Stream *s);
+void joystickSetup();
 
 #endif

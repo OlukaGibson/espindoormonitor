@@ -25,7 +25,15 @@ void chartData(String location, String country, String pollutant, float value, u
 void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor);
 void topBar(uint32_t x, uint32_t y, uint16_t bgColor);
 void fontSetup();
+
+//Menu related functions
 void menuDisplay();
+void highlightButton(std::vector<TFT_eSPI_Button>& buttons, int index);
+void clearHighlight(std::vector<TFT_eSPI_Button>& buttons, int index);
+void drawMainMenu();
+void resetSelection();
+void moveSelection(int direction);
+void handleJoystick(int xValue, int yValue, int buttonState);
 
 void lcdSetup(){
     // listFilesInLittleFS(); // List files in LittleFS
@@ -54,7 +62,7 @@ void lcdSetup(){
 
 void displayHomeScreen() {
     // Clear screen with white background
-    tft.fillScreen(TFT_WHITE);
+    tft.fillScreen(TFT_BG_COLOR);
 
     // Set text color and size
     tft.setTextColor(TFT_BLACK);
@@ -98,10 +106,176 @@ void displayIndoorSensorData(){
 
 void displayOutdoorSensorData(){}
 
-void menuDisplay(){
+void menuDisplay() {
+  drawMainMenu();
+  for (;;) {
+    // Read joystick values
+    int xValue = analogRead(VRx_PIN);
+    int yValue = analogRead(VRy_PIN);
+    int buttonState = digitalRead(SW_PIN);
+
+    // Handle joystick input
+    handleJoystick(xValue, yValue, buttonState);
+
+    // Break the loop if left arrow is used on the main menu and not returning from submenu
+    if (isMainMenu && xValue < CENTER_X - TOLERANCE && !selectPressed) {
+      break;
+    }
+
+    delay(150);
+  }
+}
+
+void clearHighlight(std::vector<TFT_eSPI_Button>& buttons, int index) {
+  buttons[index].drawButton(true);
+}
+
+// Function to highlight a button
+void highlightButton(std::vector<TFT_eSPI_Button>& buttons, int index) {
+  buttons[index].drawButton(false);
+}
+
+// Function to draw the main menu
+void drawMainMenu() {
   tft.fillScreen(TFT_BG_COLOR);
 
+  mainButtons.clear(); // Clear existing buttons
+  for (int i = 0; i < mainButtonLabels.size(); i++) {
+    // TFT_eSPI_Button button;
+    button.initButton(
+      &tft,
+      80, // Shifted left to make space for submenu
+      40 + i * (BUTTON_HEIGHT + BUTTON_GAP),
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
+      TFT_BLUE,
+      BUTTON_COLOR,
+      TFT_BG_COLOR,
+      (char*)mainButtonLabels[i], // Cast to char*
+      2
+    );
+    mainButtons.push_back(button);
+    mainButtons[i].drawButton(true);
+  }
+
+  // Highlight the current button
+  highlightButton(mainButtons, currentSelection);
 }
+
+// Function to draw a submenu
+void drawSubMenu(int menuIndex) {
+  tft.fillRect(160, 0, tft.width() - 160, tft.height(), TFT_BG_COLOR);
+
+  if (subButtons.size() <= menuIndex) {
+    subButtons.resize(menuIndex + 1);
+  }
+
+  subButtons[menuIndex].clear(); // Clear existing submenu buttons
+  for (int i = 0; i < subButtonLabels[menuIndex].size(); i++) {
+    // TFT_eSPI_Button button;
+    button.initButton(
+      &tft,
+      240, // Submenu positioned on the right
+      40 + i * (BUTTON_HEIGHT + BUTTON_GAP),
+      BUTTON_WIDTH,
+      BUTTON_HEIGHT,
+      TFT_BLUE,
+      BUTTON_COLOR,
+      TFT_BG_COLOR,
+      (char*)subButtonLabels[menuIndex][i], // Cast to char*
+      2
+    );
+    subButtons[menuIndex].push_back(button);
+    subButtons[menuIndex][i].drawButton(true);
+  }
+
+  // Highlight the first button in the submenu
+  highlightButton(subButtons[menuIndex], subMenuSelection);
+}
+
+// Function to reset selection and return to the main menu
+void resetSelection() {
+  Serial.println("Returning to main menu...");
+  isMainMenu = true;
+  activeMainMenu = -1;
+  subMenuSelection = 0;
+  drawMainMenu();
+}
+
+// Function to move the selection in the menu
+void moveSelection(int direction) {
+  // Clear current highlight
+  if (isMainMenu) {
+    clearHighlight(mainButtons, currentSelection);
+  } else {
+    clearHighlight(subButtons[activeMainMenu], subMenuSelection);
+  }
+
+  // Update selection index
+  if (isMainMenu) {
+    currentSelection += direction;
+  } else {
+    subMenuSelection += direction;
+  }
+
+  // Wrap around menu options
+  if (isMainMenu) {
+    if (currentSelection < 0) currentSelection = mainButtons.size() - 1;
+    if (currentSelection >= mainButtons.size()) currentSelection = 0;
+  } else {
+    if (subMenuSelection < 0) subMenuSelection = subButtons[activeMainMenu].size() - 1;
+    if (subMenuSelection >= subButtons[activeMainMenu].size()) subMenuSelection = 0;
+  }
+
+  // Highlight new selection
+  if (isMainMenu) {
+    highlightButton(mainButtons, currentSelection);
+  } else {
+    highlightButton(subButtons[activeMainMenu], subMenuSelection);
+  }
+}
+
+// Function to handle joystick input
+void handleJoystick(int xValue, int yValue, int buttonState) {
+  static bool prevButtonState = HIGH;
+
+  if (isMainMenu) {
+    // Up/Down to toggle selection
+    if (yValue < CENTER_Y - TOLERANCE) {
+      moveSelection(-1); // Up
+    } else if (yValue > CENTER_Y + TOLERANCE) {
+      moveSelection(1); // Down
+    }
+
+    // Right or button press to select
+    if ((xValue > CENTER_X + TOLERANCE || buttonState == LOW) && !selectPressed) {
+      selectPressed = true;
+      activeMainMenu = currentSelection; // Track selected main menu button
+      isMainMenu = false;
+      subMenuSelection = 0; // Reset selection for submenu
+
+      // Show the corresponding submenu
+      drawSubMenu(activeMainMenu);
+    } else if (buttonState == HIGH && xValue < CENTER_X + TOLERANCE) {
+      selectPressed = false;
+    }
+  } else {
+    // Submenu navigation
+    if (yValue < CENTER_Y - TOLERANCE) {
+      moveSelection(-1); // Up
+    } else if (yValue > CENTER_Y + TOLERANCE) {
+      moveSelection(1); // Down
+    }
+
+    // Left to return to the main menu
+    if (xValue < CENTER_X - TOLERANCE) {
+      resetSelection();
+    }
+  }
+
+  prevButtonState = buttonState;
+}
+
 
 
 void topBar(uint32_t x, uint32_t y, uint16_t bgColor){

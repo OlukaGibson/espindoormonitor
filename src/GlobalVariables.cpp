@@ -48,3 +48,22 @@ int16_t xpos = 0;
 int16_t ypos = 0;
 
 bool font_missing = false;
+
+// menu button
+TFT_eSPI_Button button;
+std::vector<TFT_eSPI_Button> mainButtons;
+std::vector<std::vector<TFT_eSPI_Button>> subButtons;
+const std::vector<const char*> mainButtonLabels = {"Wifi", "Devices", "Files", "Settings"};
+const std::vector<std::vector<const char*>> subButtonLabels = {
+  {"room1"},
+  {"device1", "device2"},
+  {"file1", "file2", "file3"},
+  {"setting1", "setting2", "setting3"}
+};
+
+// Global state variables
+int currentSelection = 0; // Current selected button index
+int subMenuSelection = 0; // Current selected submenu button index
+bool selectPressed = false;
+bool isMainMenu = true;   // Tracks if the user is in the main menu
+int activeMainMenu = -1;  // Tracks which main menu button was selected
