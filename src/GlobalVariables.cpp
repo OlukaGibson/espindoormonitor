@@ -8,7 +8,13 @@
 #include <PNGdec.h>
 #include <LittleFS.h>
 
+//Task management functions
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+
+// variables for control
 String commandID;
+String created_at;
 String deviceName;
 String channelID;
 String apiKey;
@@ -67,3 +73,8 @@ int subMenuSelection = 0; // Current selected submenu button index
 bool selectPressed = false;
 bool isMainMenu = true;   // Tracks if the user is in the main menu
 int activeMainMenu = -1;  // Tracks which main menu button was selected
+volatile bool buttonPressed = false; // Flag to track button press
+
+unsigned long startTime;
+unsigned long currentMillis;
+unsigned long runtime;

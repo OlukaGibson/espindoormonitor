@@ -6,22 +6,12 @@
 #include "GlobalVariables.h"
 #include "SensorsReading.h"
 #include "LCDDisplay.h"
-#include "wifiComms.h"
+#include "WifiComms.h"
 #include "EspnowComms.h"
 #include "Storage.h"
 
 // #include <SPI.h>
 #include <TFT_eSPI.h>
-
-TaskHandle_t Task1;
-TaskHandle_t Task2;
-
-volatile bool buttonPressed = false;
-
-void IRAM_ATTR handleButtonPress() {
-  buttonPressed = true; // Set the flag when the interrupt triggers
-}
-
 
 
 //this is for wifif and lcd related tasks
@@ -29,22 +19,17 @@ void Task1code( void * pvParameters ){
     Serial.println("Task1 running on core ");
     Serial.println(xPortGetCoreID());
     lcdSetup();
-    attachInterrupt(digitalPinToInterrupt(SW_PIN), handleButtonPress, FALLING);
-    wifiManagerSetup();
-    serverRoutes();
+    // if(!checkWifiConnection()){
+    //     wifiManagerSetup();
+    // }
+    // wifiManagerSetup();
+    // serverRoutes();
     joystickSetup();
     for(;;){
-        // displayHomeScreen();
-        // vTaskDelay(2000 / portTICK_PERIOD_MS);
+        displayHomeScreen();
+        displayMenu();
         displayIndoorSensorData();
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        if (buttonPressed) {
-            buttonPressed = false;
-            menuDisplay();
-            Serial.println("Button was pressed!");
-        }
-        delay(100);
-        // vTaskDelay(1000 / portTICK_PERIOD_MS);
+        displayMenu();
     }
 }
 
@@ -53,9 +38,16 @@ void Task2code( void * pvParameters ){
     Serial.println("Task2 running on core ");
     Serial.println(xPortGetCoreID());
     setupStorage();
+    // if(!checkWifiConnection()){
+    //     wifiManagerSetup();
+    // }
+    // // if (checkWifiConnection()){
+    //     getTime();
+    // // }
     for(;;){
         // cloudDataUpload();
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        writeCSVData();
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 

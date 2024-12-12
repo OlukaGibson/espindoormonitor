@@ -4,7 +4,8 @@
 void wifiManagerSetup();
 void serverRoutes();
 void fileSytem();
-
+void getTime();
 void cloudDataUpload();
+bool checkWifiConnection();
 
 #endif

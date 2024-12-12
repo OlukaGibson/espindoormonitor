@@ -34,6 +34,7 @@ void drawMainMenu();
 void resetSelection();
 void moveSelection(int direction);
 void handleJoystick(int xValue, int yValue, int buttonState);
+void displayMenu();
 
 void lcdSetup(){
     // listFilesInLittleFS(); // List files in LittleFS
@@ -106,7 +107,23 @@ void displayIndoorSensorData(){
 
 void displayOutdoorSensorData(){}
 
+void displayMenu(){
+  for (int i = 0; i < 5000; i++){
+    delay(1);
+    if (buttonPressed) {
+      break;
+    }
+  }
+  if (buttonPressed) {
+    buttonPressed = false;
+    menuDisplay();
+    Serial.println("Button was pressed!");
+  }
+  delay(1);
+}
+
 void menuDisplay() {
+  tft.loadFont(AA_FONT_SMALL, LittleFS);
   drawMainMenu();
   for (;;) {
     // Read joystick values
@@ -124,6 +141,7 @@ void menuDisplay() {
 
     delay(150);
   }
+  tft.unloadFont();
 }
 
 void clearHighlight(std::vector<TFT_eSPI_Button>& buttons, int index) {
@@ -138,14 +156,15 @@ void highlightButton(std::vector<TFT_eSPI_Button>& buttons, int index) {
 // Function to draw the main menu
 void drawMainMenu() {
   tft.fillScreen(TFT_BG_COLOR);
-
+  topBar(0, 0, TFT_LIGHTGREY);
+  roomName("Living Room", 179, 55, TFT_LIGHTGREY);
   mainButtons.clear(); // Clear existing buttons
   for (int i = 0; i < mainButtonLabels.size(); i++) {
     // TFT_eSPI_Button button;
     button.initButton(
       &tft,
-      80, // Shifted left to make space for submenu
-      40 + i * (BUTTON_HEIGHT + BUTTON_GAP),
+      106, // Shifted left to make space for submenu
+      106 + i * (BUTTON_HEIGHT + BUTTON_GAP),
       BUTTON_WIDTH,
       BUTTON_HEIGHT,
       TFT_BLUE,
@@ -165,7 +184,8 @@ void drawMainMenu() {
 // Function to draw a submenu
 void drawSubMenu(int menuIndex) {
   tft.fillRect(160, 0, tft.width() - 160, tft.height(), TFT_BG_COLOR);
-
+  topBar(0, 0, TFT_LIGHTGREY);
+  roomName("Living Room", 179, 55, TFT_LIGHTGREY);
   if (subButtons.size() <= menuIndex) {
     subButtons.resize(menuIndex + 1);
   }
@@ -175,8 +195,8 @@ void drawSubMenu(int menuIndex) {
     // TFT_eSPI_Button button;
     button.initButton(
       &tft,
-      240, // Submenu positioned on the right
-      40 + i * (BUTTON_HEIGHT + BUTTON_GAP),
+      220, // Submenu positioned on the right
+      126 + i * (BUTTON_HEIGHT + BUTTON_GAP),
       BUTTON_WIDTH,
       BUTTON_HEIGHT,
       TFT_BLUE,
@@ -276,8 +296,6 @@ void handleJoystick(int xValue, int yValue, int buttonState) {
   prevButtonState = buttonState;
 }
 
-
-
 void topBar(uint32_t x, uint32_t y, uint16_t bgColor){
   tft.fillRect(x, y, 480, 36, bgColor); // Fill a rectangle at (x, y) with width 160 and height 87 with bgColor
   tft.drawRect(x, y, 480, 36, TFT_BG_COLOR); // Draw a border for the rectangle
@@ -304,7 +322,7 @@ void roomName(String location, uint32_t x, uint32_t y, uint16_t bgColor){
   tft.loadFont(AA_FONT_SMALL, LittleFS);
   tft.setCursor(x + 5, y + 5); // Position for location
   tft.print(location);
-  tft.unloadFont();
+  // tft.unloadFont();
 }
 
 void sensorReadings (String location, String country, String pollutant, float value, uint32_t x, uint32_t y, uint16_t bgColor){

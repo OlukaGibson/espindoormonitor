@@ -47,6 +47,11 @@ bool readPMSdata(Stream *s){
 
 }
 
+void IRAM_ATTR handleButtonPress() {
+  buttonPressed = true; 
+}
+
 void joystickSetup(){
   pinMode(SW_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(SW_PIN), handleButtonPress, FALLING);
 }

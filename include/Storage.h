@@ -7,6 +7,7 @@
 
 void setupStorage();
 void readCSVData();
+void writeCSVData();
 void littleFSStorage();
 
 #endif

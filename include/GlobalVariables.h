@@ -10,7 +10,13 @@
 #include <LittleFS.h>
 #include <SD.h>
 
+//Task management functions
+extern TaskHandle_t Task1;
+extern TaskHandle_t Task2;
+
+// variables for control
 extern String commandID;
+extern String created_at;
 extern String deviceName;
 extern String channelID;
 extern String apiKey;
@@ -128,11 +134,12 @@ extern int subMenuSelection ;
 extern bool selectPressed ;
 extern bool isMainMenu ;
 extern int activeMainMenu ;
+extern volatile bool buttonPressed;
 
 // Button properties
-#define BUTTON_WIDTH  120
-#define BUTTON_HEIGHT 50
-#define BUTTON_GAP    20
+#define BUTTON_WIDTH  90
+#define BUTTON_HEIGHT 35
+#define BUTTON_GAP    15
 #define BUTTON_COLOR  TFT_BLUE
 #define SELECT_COLOR  TFT_WHITE
 
@@ -140,5 +147,9 @@ extern int activeMainMenu ;
 #define CENTER_X 1947
 #define CENTER_Y 1891
 #define TOLERANCE 1200
+
+extern unsigned long startTime;
+extern unsigned long currentMillis;
+extern unsigned long runtime;
 
 #endif

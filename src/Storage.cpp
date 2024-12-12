@@ -1,6 +1,10 @@
 #include <SD.h>
 #include <SPI.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 #include "GlobalVariables.h"
+#include "WifiComms.h"
+#include "SensorsReading.h"
 
 void setupStorage() {
     spiSD.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
@@ -44,10 +48,67 @@ void readCSVData() {
     if (commaIndex > 0) {
       String pm25_str = line.substring(commaIndex + 1);
       pm25_data[data_count] = pm25_str.toFloat();
-      Serial.print("Read PM2.5 value: "); // Debug print
-      Serial.println(pm25_data[data_count]); // Debug print
+      Serial.print("Read PM2.5 value: ");
+      Serial.println(pm25_data[data_count]);
       data_count++;
     }
   }
   dataFile.close();
 }
+
+
+void writeCSVData(){
+  if (readPMSdata(&Serial1)) {
+    currentMillis = millis();
+    runtime = currentMillis - startTime;
+    
+    // Open the file on SD card
+    File dataFile = SD.open("/data.csv", FILE_APPEND);
+
+    if (!dataFile) {
+      Serial.println("Error opening data.csv for writing!");
+      return;
+    }
+
+    // Write the data to the file
+
+    dataFile.print(created_at);
+    dataFile.print(",");
+    dataFile.print(runtime);
+    dataFile.print(",");
+    dataFile.print(pmdata.pm10_standard);
+    dataFile.print(",");
+    dataFile.print(pmdata.pm25_standard);
+    dataFile.print(",");
+    dataFile.println(pmdata.pm100_standard);
+
+    dataFile.close();
+    Serial.println("Data written to data.csv");
+  } 
+}
+
+  
+  // if(checkWifiConnection){}
+
+// void writeCSVData() {
+
+//   // Open the file on SD card
+//   File dataFile = SD.open("/data.csv", FILE_APPEND);
+
+//   if (!dataFile) {
+//     Serial.println("Error opening data.csv for writing!");
+//     return;
+//   }
+
+//   // Write the data to the file
+//   dataFile.print(created_at);
+//   dataFile.print(",");
+//   dataFile.print(pmdata.pm10_standard);
+//   dataFile.print(",");
+//   dataFile.print(pmdata.pm25_standard);
+//   dataFile.print(",");
+//   dataFile.println(pmdata.pm100_standard);
+
+//   dataFile.close();
+//   Serial.println("Data written to data.csv");
+// }

@@ -22,15 +22,45 @@ WiFiManager wm;
 #include "SensorsReading.h"
 #include "Storage.h"
 
-const char* ssid = "AirQo Device";
-const char* password = "password";
+char* ssid = "AirQo Device";
+char* password = "password";
 
+void getTime() {
+    HTTPClient http;
+    int httpCode = -1;
+    String created_at;
+
+    while (httpCode <= 0) {
+        http.begin("http://worldtimeapi.org/api/timezone/Etc/UTC");
+        httpCode = http.GET();
+
+        if (httpCode > 0) {
+            String payload = http.getString();
+            int datetimeIndex = payload.indexOf("\"datetime\":\"") + 12;
+            created_at = payload.substring(datetimeIndex, datetimeIndex + 19);
+            Serial.println(created_at);
+        } else {
+            Serial.println("Error getting time from API, retrying...");
+            delay(1000); // Wait for 1 second before retrying
+        }
+
+        http.end();
+    }
+}
+
+bool checkWifiConnection(){
+    if(WiFi.status() != WL_CONNECTED){
+        Serial.println("Wifi Disconnected");
+        return false;
+    }
+    return true;
+}
 
 void wifiManagerSetup() {
     // wm.resetSettings();
     if( !wm.autoConnect(ssid, password) ) {
         Serial.println("Failed to connect");
-        delay(60000);
+        // delay(60000);
         // ESP.restart();
     }
     Serial.println("");
@@ -150,9 +180,7 @@ void fileSytem(){
     server.begin();
 }
 
-
 //server based data upload
-
 void cloudDataUpload() {
     String url = String(serverName) + "?api_key=" + String(apiKey) + "&field1=" + String(sensor1_2) +
                  "&field2=" + String(sensor1_10) + "&field3=" + String(sensor2_2) +
@@ -179,8 +207,6 @@ void cloudDataUpload() {
 }
 
 void cloudFileUpload(){}
-
-
 
 // int8_t pm1 = random(0, 10);
 // int8_t pm25 = random(0, 10);
