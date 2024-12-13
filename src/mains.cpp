@@ -27,9 +27,9 @@ void Task1code( void * pvParameters ){
     joystickSetup();
     for(;;){
         displayHomeScreen();
-        displayMenu();
+        // displayMenu();
         displayIndoorSensorData();
-        displayMenu();
+        // displayMenu();
     }
 }
 

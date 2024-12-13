@@ -94,21 +94,38 @@ void displayHomeScreen() {
 
 }
 
-void displayIndoorSensorData(){
+void displayIndoorSensorData() {
   tft.fillScreen(TFT_BG_COLOR);
   topBar(0, 0, TFT_LIGHTGREY);
   roomName("Living Room", 179, 55, TFT_LIGHTGREY);
   readCSVData();
+
+  // Display PM2.5 data
   sensorCharts(240, 106, TFT_LIGHTGREY);
   sensorReadings("Indoor", "Nairobi", "PM2.5", pmdata.pm25_standard, 39, 96, TFT_LIGHTGREY);
-  // sensorReadings("Indoor", "Nairobi", "PM10", pmdata.pm100_standard, 266, 86, TFT_WHITE);
-  delay(3000);
+  displayMenu();
+
+  // Display PM10 data
+  tft.fillScreen(TFT_BG_COLOR);
+  topBar(0, 0, TFT_LIGHTGREY);
+  roomName("Living Room", 179, 55, TFT_LIGHTGREY);
+  sensorCharts(240, 106, TFT_LIGHTGREY);
+  sensorReadings("Indoor", "Nairobi", "PM1.0", pmdata.pm10_standard, 39, 96, TFT_LIGHTGREY);
+  displayMenu();
+
+  // Display PM100 data
+  tft.fillScreen(TFT_BG_COLOR);
+  topBar(0, 0, TFT_LIGHTGREY);
+  roomName("Living Room", 179, 55, TFT_LIGHTGREY);
+  sensorCharts(240, 106, TFT_LIGHTGREY);
+  sensorReadings("Indoor", "Nairobi", "PM10.0", pmdata.pm100_standard, 39, 96, TFT_LIGHTGREY);
+  displayMenu();
 }
 
 void displayOutdoorSensorData(){}
 
 void displayMenu(){
-  for (int i = 0; i < 5000; i++){
+  for (int i = 0; i < 3000; i++){
     delay(1);
     if (buttonPressed) {
       break;
@@ -157,7 +174,7 @@ void highlightButton(std::vector<TFT_eSPI_Button>& buttons, int index) {
 void drawMainMenu() {
   tft.fillScreen(TFT_BG_COLOR);
   topBar(0, 0, TFT_LIGHTGREY);
-  roomName("Living Room", 179, 55, TFT_LIGHTGREY);
+  roomName("Menu", 179, 55, TFT_LIGHTGREY);
   mainButtons.clear(); // Clear existing buttons
   for (int i = 0; i < mainButtonLabels.size(); i++) {
     // TFT_eSPI_Button button;
@@ -185,7 +202,7 @@ void drawMainMenu() {
 void drawSubMenu(int menuIndex) {
   tft.fillRect(160, 0, tft.width() - 160, tft.height(), TFT_BG_COLOR);
   topBar(0, 0, TFT_LIGHTGREY);
-  roomName("Living Room", 179, 55, TFT_LIGHTGREY);
+  roomName("Menu", 179, 55, TFT_LIGHTGREY);
   if (subButtons.size() <= menuIndex) {
     subButtons.resize(menuIndex + 1);
   }
