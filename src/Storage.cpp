@@ -13,6 +13,9 @@ void setupStorage() {
         return;
     }
     Serial.println("Card Mount Success");
+    if (!SD.exists("/assets")) {
+        SD.mkdir("/assets");
+    }
     File root = SD.open("/");
     while (root) {
         Serial.println(root.name());
@@ -39,14 +42,32 @@ void readCSVData() {
 
   data_count = 0;
 
-  // Skip the header line
-  String line = dataFile.readStringUntil('\n');
+  // Read the entire file to count the number of lines
+  int lineCount = 0;
+  while (dataFile.available()) {
+    String line = dataFile.readStringUntil('\n');
+    lineCount++;
+  }
 
+  // Rewind the file to the beginning
+  dataFile.seek(0);
+
+  // Skip lines until the last MAX_DATA_POINTS lines
+  int skipLines = lineCount - MAX_DATA_POINTS;
+  for (int i = 0; i < skipLines; i++) {
+    dataFile.readStringUntil('\n');
+  }
+
+  // Read the last MAX_DATA_POINTS lines
   while (dataFile.available() && data_count < MAX_DATA_POINTS) {
-    line = dataFile.readStringUntil('\n');
-    int commaIndex = line.indexOf(',');
-    if (commaIndex > 0) {
-      String pm25_str = line.substring(commaIndex + 1);
+    String line = dataFile.readStringUntil('\n');
+    int firstCommaIndex = line.indexOf(',');
+    int secondCommaIndex = line.indexOf(',', firstCommaIndex + 1);
+    int thirdCommaIndex = line.indexOf(',', secondCommaIndex + 1);
+    int fourthCommaIndex = line.indexOf(',', thirdCommaIndex + 1);
+
+    if (fourthCommaIndex > 0) {
+      String pm25_str = line.substring(thirdCommaIndex + 1, fourthCommaIndex);
       pm25_data[data_count] = pm25_str.toFloat();
       Serial.print("Read PM2.5 value: ");
       Serial.println(pm25_data[data_count]);
@@ -55,7 +76,6 @@ void readCSVData() {
   }
   dataFile.close();
 }
-
 
 void writeCSVData(){
   if (readPMSdata(&Serial1)) {

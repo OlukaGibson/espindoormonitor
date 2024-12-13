@@ -392,7 +392,7 @@ void sensorCharts(unsigned int x, unsigned int y, unsigned short bgColor) {
     int barWidth = 10;
     for (int i = 0; i < data_count; i++) {
         float barHeight = pm25_data[i];
-        int barX = gr.getPointX(i);          // Map x to graph pixel
+        int barX = gr.getPointX(i) + 5;          // Map x to graph pixel
         int barY = gr.getPointY(barHeight); // Top of the bar
         int bottomY = gr.getPointY(0.0);    // Bottom of the graph
         if (barX >= 0 && barX < tft.width() && barY >= 0 && barY < tft.height()) {
@@ -405,23 +405,23 @@ void sensorCharts(unsigned int x, unsigned int y, unsigned short bgColor) {
         }
     }
 
-    // Draw x-axis labels
-    for (int i = 0; i < data_count; i++) {
-        tft.setTextDatum(TC_DATUM);
-        // tft.loadFont(AA_FONT_TINNY, LittleFS);
-        tft.setTextColor(TFT_BLACK, TFT_BG_COLOR);
-        tft.drawNumber(i, gr.getPointX(i), gr.getPointY(0.0) + 5);
-        // tft.unloadFont();
-    }
+    // // Draw x-axis labels
+    // for (int i = 0; i < data_count; i++) {
+    //     tft.setTextDatum(TC_DATUM);
+    //     // tft.loadFont(AA_FONT_TINNY, LittleFS);
+    //     tft.setTextColor(TFT_BLACK, TFT_BG_COLOR);
+    //     tft.drawNumber(i, gr.getPointX(i), gr.getPointY(0.0) + 5);
+    //     // tft.unloadFont();
+    // }
 
-    // Draw y-axis labels
-    for (int i = 0; i <= 100; i += 10) {
-        tft.setTextDatum(MR_DATUM);
-        // tft.loadFont(AA_FONT_TINNY, LittleFS);
-        tft.setTextColor(TFT_BLACK, TFT_BG_COLOR);
-        tft.drawNumber(i, gr.getPointX(0.0) - 5, gr.getPointY(i));
-        // tft.unloadFont();
-    }
+    // // Draw y-axis labels
+    // for (int i = 0; i <= 100; i += 10) {
+    //     tft.setTextDatum(MR_DATUM);
+    //     // tft.loadFont(AA_FONT_TINNY, LittleFS);
+    //     tft.setTextColor(TFT_BLACK, TFT_BG_COLOR);
+    //     tft.drawNumber(i, gr.getPointX(0.0) - 5, gr.getPointY(i));
+    //     // tft.unloadFont();
+    // }
     tft.unloadFont();
 }
 
@@ -447,8 +447,9 @@ void pngDraw(PNGDRAW *pDraw) {
 }
 
 void * pngOpen(const char *filename, int32_t *size) {
-  Serial.printf("Attempting to open %s\n", filename);
-  pngfile = FlashFS.open(filename, "r");
+  String filePath = String("/assets/") + filename;
+  Serial.printf("Attempting to open %s\n", filePath.c_str());
+  pngfile = SD.open(filePath.c_str(), "r");
   *size = pngfile.size();
   return &pngfile;
 }
